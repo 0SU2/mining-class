@@ -8,7 +8,7 @@ y semestre.
 - Hace el grafico de dispersion correspondiente
 a cada par de variables.
 """
-import matplolib.pyplot as plt
+import matplotlib.pyplot as plt
 import pandas as pd
 def coef_pearson(val_1, val_2):
     r = 0
