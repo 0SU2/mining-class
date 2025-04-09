@@ -44,14 +44,14 @@ def outliers(l, q1, q3):
       if v <= uif:
           uw = v
           break
-  
+
   print(f'\tWhisker inferior: {lw}')
   print(f'\tWhisker superior: {uw}')
 
   # Outliers
   outs = [v for v in l if v < lw or v > uw]
   print(f'\tOutliers: {outs}')
-  
+
   return
 
 def cuartil(l_v, q):
@@ -80,7 +80,7 @@ def trimm_data(datos,p=10):
 
 def get_bins(values,n):
   lim_bins = []
-  # 1.Encontrar el rango 
+  # 1.Encontrar el rango
   min = values[0]
   max = values[-1]
   rango = abs(min-max)
@@ -88,19 +88,19 @@ def get_bins(values,n):
   size = rango/n
   l_i = min
   l_s = min + size
-  
-  # 3. Definir el limite superior e inferior de cada bin y agregarlo a una lista de listas 
+
+  # 3. Definir el limite superior e inferior de cada bin y agregarlo a una lista de listas
   lim_bins = [[l_i+(size*i),l_s+(size*i)] for i in range(n)]
   bins = [[]]
   i = 0
-  for v in values: 
+  for v in values:
     if (v >= l_s) and (i < n-1):
         bins.append([])
         i += 1
         l_s += size
     if (v < l_s) or (i == n-1):
         bins[i].append(v)
-  
+
   return lim_bins
 
 def busqueda_frecuencias(l_p:list):
@@ -159,6 +159,11 @@ def resumen_salarios(country_label:str, list_Comp:DataFrame):
 
   # Boxplot
   create_plot(label_title=country_label, label_file=country_label, type_of_plot='boxplot', values=values)
+  # Histograma
+  plt.figure()
+  plt.hist(values, bins=10)
+  plt.title(f'Histograma de {country_label}')
+  plt.savefig(f'./test_hist.pdf', dpi=600)
 
   # Categorizando los salarios en 3 tipos, alto, medio y bajo
   cat_sal = cat_wages(values)
@@ -169,14 +174,16 @@ def resumen_salarios(country_label:str, list_Comp:DataFrame):
   catg = list(cat_freq_dic.keys())
   freq = list(cat_freq_dic.values())
   print(freq)
+
   # create_plot(l_l=['Alto', 'Medio', 'Bajo'], l_f=[freq_a, freq_m, freq_b],label_title=f'Frecuencias de salarios {country_label}', label_file=f'frecuencia_salario_{country_label}' ,type_of_plot='bar')
   plt.figure(figsize=(10,7))
   barra = plt.bar(catg, freq, color='blue')
   plt.bar_label(barra, color='blue', label_type='edge')
   plt.title(f'test')
   plt.tick_params('x', labelsize=8, rotation=70)
+  plt.savefig(f'./test_bar.pdf', dpi=600)
 
-  return 
+  return
 
 def resume_country(sr_f:DataFrame):
   paises_lists = sr_f['Country'].to_list()
@@ -189,7 +196,7 @@ def resume_country(sr_f:DataFrame):
   total = sum(d_f.values())
   for k, v in d_f.items():
     l_p.append((v/total * 100, k, v))
-  
+
   l_p.sort(reverse=True)
   l_l, l_f = busqueda_frecuencias(l_p)
   # Crear grafico de barras
