@@ -3,20 +3,82 @@ from pandas import DataFrame
 import matplotlib.pyplot as plt
 import os
 
-def create_plot(l_l:str=None, l_f:str=None, label_title:str=None, label_file:str=None, type_of_plot:str=None, values:list=None):
+def define_category_wage(value:int):
+  if value <= 10000:
+    return 'Bajo'
+  elif value > 10000 and value <= 50000:
+    return 'Medio'
+  elif value > 50000:
+    return 'Alto'
+  return
+
+def prob_cond(lista_dataframe:list):
+  c_t = {}
+  list_catg = [ define_category_wage(value) for value in lista_dataframe]
+  for x,y in zip(list_catg, lista_dataframe):
+    if define_category_wage(y) == 'Alto':
+      if x not in c_t:
+        c_t[x] = {}
+      c_t[x][y] = c_t[x].get(y,0)+1
+    if define_category_wage(y) == 'Medio':
+      if x not in c_t:
+        c_t[x] = {}
+      c_t[x][y] = c_t[x].get(y,0)+1
+    if define_category_wage(y) == 'Bajo':
+      if x not in c_t:
+        c_t[x] = {}
+      c_t[x][y] = c_t[x].get(y,0)+1
+
+  suma_dic = sum(c_t['Alto'].values())
+  total_dic = len(list_catg)
+  return
+
+def create_plot(catg:list=None, freq:list=None, label_title:str=None, label_file:str=None, type_of_plot:str=None, values:list=None):
   if type_of_plot == 'bar':
-    plt.figure(figsize=(10,7))
-    plt.bar(l_l, l_f, width=0.5)
-    plt.title(f'{label_title}')
-    plt.tick_params('x', labelsize=8, rotation=70)
-    plt.savefig(f'./{label_file}.pdf', dpi=600)
-    return
+    if freq == None:
+      plt.figure(figsize=(10,7))
+      return
+    else:
+      plt.figure(figsize=(10,7))
+      barra = plt.bar(catg, freq, color='blue', width=0.5)
+      plt.bar_label(barra, color='blue', label_type='edge')
+      plt.title(f'{label_title}')
+      plt.tick_params('x', labelsize=8, rotation=70)
+      plt.savefig(f'./{label_file}.pdf', dpi=600)
+      return
   if type_of_plot == 'boxplot':
     plt.figure()
     plt.boxplot(values)
-    plt.title(f'Boxplot de {label_title}')
-    plt.savefig(f'salario_anual_{label_file}_boxplot.pdf')
+    plt.title(f'{label_title}')
+    plt.savefig(f'{label_file}.pdf')
     return
+  if type_of_plot == 'hist':
+    plt.figure()
+    plt.hist(values, bins=10)
+    plt.title(f'{label_title}')
+    plt.savefig(f'./{label_file}.pdf', dpi=600)
+    return
+
+def coef_pearson(val_1,val_2):
+  r = 0
+  if len(val_1) != len(val_2):
+    print('La lista debe tener la misma logitud')
+    return 
+  
+  x_mean =  sum(val_1) / len(val_1)
+  y_mean = sum(val_2) / len(val_2)
+
+  num = 0
+  den1 = 0
+  den2 = 0
+  for x,y in zip(val_1,val_2):
+    num += (x-x_mean)*(y-y_mean)
+    den1 += (x-x_mean)**2
+    den2 += (y-y_mean)**2 
+
+  r = num/((den1**0.5)*(den2**0.5))
+
+  return r
 
 def var_std(lista, media):
   var = [(x_i - media)**2 for x_i in lista]
@@ -24,35 +86,6 @@ def var_std(lista, media):
 
   std = var**0.5
   return var,std
-
-def outliers(l, q1, q3):
-  iqr = q3 - q1
-  lif = q1 - 1.5 * iqr
-  uif = q3 + 1.5 * iqr
-
-  print(f'\tIQR :{iqr:.2f}')
-  print(f'\tLIF :{lif:.2f}')
-  print(f'\tUIF :{uif:.2f}')
-
-  # Whisker inferior y superior
-  for v in l:
-      if  v >= lif:
-          lw = v
-          break
-
-  for v in l[::-1]:
-      if v <= uif:
-          uw = v
-          break
-
-  print(f'\tWhisker inferior: {lw}')
-  print(f'\tWhisker superior: {uw}')
-
-  # Outliers
-  outs = [v for v in l if v < lw or v > uw]
-  print(f'\tOutliers: {outs}')
-
-  return
 
 def cuartil(l_v, q):
   # Posicion en la lista
@@ -158,14 +191,12 @@ def resumen_salarios(country_label:str, list_Comp:DataFrame):
   print(f'\tDevisacion estandar: {std:.2f}')
 
   # Boxplot
-  create_plot(label_title=country_label, label_file=country_label, type_of_plot='boxplot', values=values)
+  create_plot(label_title=f'Boxplot de {country_label}', label_file=f'frecuencias_boxplot_{country_label}', type_of_plot='boxplot', values=values)
   # Histograma
-  plt.figure()
-  plt.hist(values, bins=10)
-  plt.title(f'Histograma de {country_label}')
-  plt.savefig(f'./test_hist.pdf', dpi=600)
+  create_plot(values=values, label_title=f'Histograma de {country_label}', label_file=f'histograma_salario_{country_label}', type_of_plot='hist')
 
   # Categorizando los salarios en 3 tipos, alto, medio y bajo
+  total_sal = len(values)
   cat_sal = cat_wages(values)
   freq_b = len(cat_sal['Bajo'])
   freq_m = len(cat_sal['Medio'])
@@ -173,16 +204,20 @@ def resumen_salarios(country_label:str, list_Comp:DataFrame):
   cat_freq_dic = {"Alto": freq_a, "Medio": freq_m,"Bajo": freq_b }
   catg = list(cat_freq_dic.keys())
   freq = list(cat_freq_dic.values())
-  print(freq)
+  print(f'\tFrecuencias categorizadas: {cat_freq_dic}')
 
-  # create_plot(l_l=['Alto', 'Medio', 'Bajo'], l_f=[freq_a, freq_m, freq_b],label_title=f'Frecuencias de salarios {country_label}', label_file=f'frecuencia_salario_{country_label}' ,type_of_plot='bar')
-  plt.figure(figsize=(10,7))
-  barra = plt.bar(catg, freq, color='blue')
-  plt.bar_label(barra, color='blue', label_type='edge')
-  plt.title(f'test')
-  plt.tick_params('x', labelsize=8, rotation=70)
-  plt.savefig(f'./test_bar.pdf', dpi=600)
+  create_plot(catg, freq, label_title=f'Frecuencias de salario en {country_label}', label_file=f'frecuencias_salario_categorica_{country_label}', type_of_plot='bar',)
 
+  # Calculando la probabilidad condicional
+  prob_cond = freq_a / total_sal
+  print(f'\tProbabilidad de salario alto en {country_label}: {prob_cond:.3f}')
+
+  # Calculando el chi cuadrado
+  list_catg = [ define_category_wage(value) for value in values]
+  print(coef_pearson(values, list_catg))
+
+
+  # prob_cond(values)
   return
 
 def resume_country(sr_f:DataFrame):
@@ -203,12 +238,12 @@ def resume_country(sr_f:DataFrame):
   create_plot(l_l, l_f, label_title='Paises con mayor respuestas',label_file='barras_paises' ,type_of_plot='bar')
 
   # # Seleccionar los 3 mejores y a México, pero tambien calcular q1,q2,q3, etc.
-  # print('------------')
-  # for best03 in l_l[:3]:
-  #   resumen_salarios(best03, sr_f)
-  #   print('------------')
-  # Seleccionar a Mexico
-  resumen_salarios(l_l[:1][0],sr_f)
+  print('------------')
+  for best03 in l_l[:3]:
+    resumen_salarios(best03, sr_f)
+    print('------------')
+  # # Seleccionar a Mexico
+  resumen_salarios(l_l[-1:][0],sr_f)
   print('------------')
 
   return
