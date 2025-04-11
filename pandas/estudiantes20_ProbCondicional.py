@@ -20,7 +20,7 @@ tener una consola dado que se es hombre/mujer
 
 import pandas as pd
 import matplotlib.pyplot as plt
-w_d = 'C:\\Users\\mk4c1\\OneDrive\\Documentos\\1.-DICIS.-OctavoSemestre\\MineriaDatos\\ManejoArchivos-Estudiantes\\'
+w_d = '/home/osu2/programming/mining-class/info-estudiantes/'
 i_f = w_d + 'info_estudiantes.csv'
 df = pd.read_csv(i_f)
 
@@ -43,7 +43,9 @@ def contigencia_tab(values_1,values_2):
 
 def prob_cond(c_t, val_A,val_B):
   p_AB = c_t[val_B][val_A] 
+  print(p_AB)
   p_B = sum(c_t[val_B].values())  # Probabiildad de B 
+  print(p_B)
   #p_c = p_AB / p_B
 
   return p_AB / p_B
@@ -52,7 +54,7 @@ def prob_cond(c_t, val_A,val_B):
 c_t = contigencia_tab(sexo,consola)
 print('Tabla de contingencia',c_t)
 print('Sexo ->',sexo)
-print('Mascota ->',mascota)
+print('Mascota ->',consola)
 print(f'Tabla de contingencia entre sexo y consola')
 p_c = prob_cond(c_t,'s','h')
 print(f'Probabilidad de que sea hombre y tenga consola: {p_c} ')

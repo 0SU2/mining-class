@@ -7,7 +7,7 @@ todas las tablas deben ser 2x2
 '''
 import pandas as pd
 import matplotlib.pyplot as plt
-w_d = 'C:\\Users\\mk4c1\\OneDrive\\Documentos\\1.-DICIS.-OctavoSemestre\\MineriaDatos\\ManejoArchivos-Estudiantes\\'
+w_d = '/home/osu2/programming/mining-class/info-estudiantes/'
 i_f = w_d + 'info_estudiantes.csv'
 df = pd.read_csv(i_f)
 
@@ -22,7 +22,6 @@ def contigencia_tab(values_1,values_2):
   # Formar la tabla de contingencia
   c_t = {} 
   for x, y in zip(values_1,values_2):
-    print(f'{x,y}\n')
     if x not in c_t: # Si aun no esta definida en el diccionario
       c_t[x] = {}
     c_t[x][y] = c_t[x].get(y,0) + 1
@@ -49,8 +48,6 @@ def phi_coef(c_t,lab_1,lab_2):
 
 print(f'Sexo --> {sexo}')
 print(f'mascota --> {mascota}')
-
-
 
 c_t = contigencia_tab(sexo,mascota)
 

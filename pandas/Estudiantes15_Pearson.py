@@ -6,7 +6,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-w_d = 'C:\\Users\\mk4c1\\OneDrive\\Documentos\\1.-DICIS.-OctavoSemestre\\MineriaDatos\\ManejoArchivos-Estudiantes\\'
+w_d = '/home/osu2/programming/mining-class/info-estudiantes/'
 i_f = w_d + 'info_estudiantes.csv'
 df = pd.read_csv(i_f)
 edad = df['edad'].to_list()
@@ -33,6 +33,9 @@ def coef_pearson(val_1,val_2):
   r = num/((den1**0.5)*(den2**0.5))
 
   return r
+
+print(len(edad))
+print(len(semestre))
 
 print(coef_pearson(edad,semestre))
 

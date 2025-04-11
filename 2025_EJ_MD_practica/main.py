@@ -2,6 +2,7 @@ import pandas as pd
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 import os
+from scipy import stats
 
 def define_category_wage(value:int):
   if value <= 10000:
@@ -12,26 +13,21 @@ def define_category_wage(value:int):
     return 'Alto'
   return
 
-def prob_cond(lista_dataframe:list):
-  c_t = {}
-  list_catg = [ define_category_wage(value) for value in lista_dataframe]
-  for x,y in zip(list_catg, lista_dataframe):
-    if define_category_wage(y) == 'Alto':
-      if x not in c_t:
-        c_t[x] = {}
-      c_t[x][y] = c_t[x].get(y,0)+1
-    if define_category_wage(y) == 'Medio':
-      if x not in c_t:
-        c_t[x] = {}
-      c_t[x][y] = c_t[x].get(y,0)+1
-    if define_category_wage(y) == 'Bajo':
-      if x not in c_t:
-        c_t[x] = {}
-      c_t[x][y] = c_t[x].get(y,0)+1
+def prob_cond(c_t, val_A,val_B):
+  p_AB = c_t[val_B][val_A] 
+  p_B = sum(c_t[val_B].values())  # Probabiildad de B 
+  #p_c = p_AB / p_B
 
-  suma_dic = sum(c_t['Alto'].values())
-  total_dic = len(list_catg)
-  return
+  return p_AB / p_B
+
+def tab_cot(values_1:list, values_2:list):
+  # Formar la tabla de contingencia
+  c_t = {} 
+  for x, y in zip(values_1,values_2):
+    if x not in c_t: # Si aun no esta definida en el diccionario
+      c_t[x] = {}
+    c_t[x][y] = c_t[x].get(y,0) + 1
+  return c_t
 
 def create_plot(catg:list=None, freq:list=None, label_title:str=None, label_file:str=None, type_of_plot:str=None, values:list=None):
   if type_of_plot == 'bar':
@@ -58,27 +54,6 @@ def create_plot(catg:list=None, freq:list=None, label_title:str=None, label_file
     plt.title(f'{label_title}')
     plt.savefig(f'./{label_file}.pdf', dpi=600)
     return
-
-def coef_pearson(val_1,val_2):
-  r = 0
-  if len(val_1) != len(val_2):
-    print('La lista debe tener la misma logitud')
-    return 
-  
-  x_mean =  sum(val_1) / len(val_1)
-  y_mean = sum(val_2) / len(val_2)
-
-  num = 0
-  den1 = 0
-  den2 = 0
-  for x,y in zip(val_1,val_2):
-    num += (x-x_mean)*(y-y_mean)
-    den1 += (x-x_mean)**2
-    den2 += (y-y_mean)**2 
-
-  r = num/((den1**0.5)*(den2**0.5))
-
-  return r
 
 def var_std(lista, media):
   var = [(x_i - media)**2 for x_i in lista]
@@ -188,7 +163,7 @@ def resumen_salarios(country_label:str, list_Comp:DataFrame):
   print(f'\tCuartil 3: {Q3}')
   print(f'\tSalario maximo en {country_label}: ' + str(max(values)))
   print(f'\tMedia: {m_a:.2f}')
-  print(f'\tDevisacion estandar: {std:.2f}')
+  print(f'\tDesviacion estandar: {std:.2f}')
 
   # Boxplot
   create_plot(label_title=f'Boxplot de {country_label}', label_file=f'frecuencias_boxplot_{country_label}', type_of_plot='boxplot', values=values)
@@ -207,17 +182,6 @@ def resumen_salarios(country_label:str, list_Comp:DataFrame):
   print(f'\tFrecuencias categorizadas: {cat_freq_dic}')
 
   create_plot(catg, freq, label_title=f'Frecuencias de salario en {country_label}', label_file=f'frecuencias_salario_categorica_{country_label}', type_of_plot='bar',)
-
-  # Calculando la probabilidad condicional
-  prob_cond = freq_a / total_sal
-  print(f'\tProbabilidad de salario alto en {country_label}: {prob_cond:.3f}')
-
-  # Calculando el chi cuadrado
-  list_catg = [ define_category_wage(value) for value in values]
-  print(coef_pearson(values, list_catg))
-
-
-  # prob_cond(values)
   return
 
 def resume_country(sr_f:DataFrame):
@@ -245,6 +209,23 @@ def resume_country(sr_f:DataFrame):
   # # Seleccionar a Mexico
   resumen_salarios(l_l[-1:][0],sr_f)
   print('------------')
+
+  # Obteniendo todos los salarios anuales de los usuarios en los 3 mejores paises
+  data = sr_f[sr_f['Country'].str.contains(f'{l_l[0]}|{l_l[1]}|{l_l[2]}|{l_l[-1:][0]}')]
+  l_country = data['Country'].to_list()
+  l_wage = data['ConvertedCompYearly'].to_list()
+  cat_wage = [ define_category_wage(value) for value in l_wage]
+  c_t = tab_cot(l_country, cat_wage)
+  for best03 in l_l[:3]:
+    p_c = prob_cond(c_t, 'Alto', f'{best03}')
+    print(f'Probabilidad de que sea de {best03} y tenga salario alto: {p_c}')
+  
+  p_c = prob_cond(c_t, 'Alto', f'{l_l[-1:][0]}')
+  print(c_t)
+  print(f'Probabilidad de que sea de {l_l[-1:][0]} y tenga salario alto: {p_c}')
+  l = [list(v.values()) for v in c_t.values()]
+  chi = stats.chi2_contingency(l)
+  print(l)
 
   return
 

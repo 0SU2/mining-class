@@ -5,7 +5,7 @@ Hacer una funcion para la prueba del chi-cuadrado de Pearson
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
-w_d = 'C:\\Users\\mk4c1\\OneDrive\\Documentos\\1.-DICIS.-OctavoSemestre\\MineriaDatos\\ManejoArchivos-Estudiantes\\'
+w_d = '/home/osu2/programming/mining-class/info-estudiantes/'
 i_f = w_d + 'info_estudiantes.csv'
 df = pd.read_csv(i_f)
 
