@@ -1,10 +1,7 @@
 """
-Con base en el resultado
-previo, crear un grafico de barras
-mostrando solo las 20 palabras mas
-frecuentes.
-
-Ademas, crear el vocabulario.
+Formar un vocabulario por cada
+genero, y encontrar las
+palabras que tienen en comun
 """
 from nltk.corpus import stopwords
 import pandas as pd
@@ -13,7 +10,7 @@ import re
 import os
 import nltk
 
-def create_plot_freq(lista:list):
+def create_plot_freq(lista:list, label:str):
   l_l = []
   l_f = []
   for f,w in lista:
@@ -24,7 +21,7 @@ def create_plot_freq(lista:list):
   plt.bar(l_l, l_f)
   plt.title(f'Test')
   plt.xticks(rotation=90)
-  plt.savefig(f'./test.pdf')
+  plt.savefig(f'./{label}_plot.pdf')
   return
 
 def freq_ord(d:dict):
@@ -60,20 +57,30 @@ def preproc_text(post, s_w):
   return post
 
 nltk.download('stopwords')
-w_d = os.getcwd() + os.sep + "fb_publicaciones.csv"
+w_d = os.getcwd() + os.sep + 'users-posts' +os.sep + "fb_publicaciones.csv"
 df = pd.read_csv(w_d)
-posts = df['publicacion'].tolist()
+sexo = set(df['sexo'].tolist())
 
 # Eliminacion de stopwords
 # 1. Cargar la lista precompilada
 s_w = stopwords.words('spanish')
 s_w = set(s_w) # 0(1)
 
-posts = [preproc_text(post, s_w) for post in posts]
-dic_posts = freq_word(posts)
-list_freq = freq_ord(dic_posts)
-create_plot_freq(list_freq[:20])
+d_voc = {}
+for s in sexo:
+  filtro_s = df['sexo'] == s
+  posts = df[filtro_s]['publicacion'].tolist()
+  # Limpiar el texto
+  posts = [preproc_text(post, s_w) for post in posts]
+  dic_posts = freq_word(posts)
+  list_freq = freq_ord(dic_posts)
+  create_plot_freq(list_freq[:20], s)
 
-# Vocabulario general. Conjunto de palabras
-# única.
-voc = set(dic_posts.keys())
+  # Vocabulario para s {hombre , mujer}.
+  # Conjunto de palabras única.
+  voc = set(dic_posts.keys())
+  d_voc[s] = voc
+
+# Interseccion de las palabras que usan hombres y mujeres
+inter = d_voc['hombre'].intersection(d_voc['mujer'])
+print(len(inter))
