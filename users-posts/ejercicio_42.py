@@ -1,11 +1,4 @@
-"""
-Crear la matriz document-termino,
-donde un documento son las publicaciones de
-un usuario.
 
-Para cada usuario, encontrar aqul más
-similiar.
-"""
 from nltk.corpus import stopwords
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -87,53 +80,71 @@ df = pd.read_csv(w_d)
 s_w = stopwords.words('spanish')
 s_w = set(s_w) # 0(1)
 
-users = df['usuario'].unique()
-docs = []
-for user in users:
-  f_u = df['usuario'] == user
-  posts = df[f_u]['publicacion'].tolist()
-  posts = [preproc_text(post, s_w)
-           for post in posts]
-  posts = [' '.join(post)
-           for post in posts]
-  docs.append(' '.join(posts))
+# Etiquetas/labels
+sexo = df['sexo'].tolist()
 
-# # Vocabulario
-# V =  [t for post in posts for t in post]
-# V = set(V)
+# Publicaciones/documentos
+posts = df['publicacion'].tolist()
+posts = [preproc_text(post,s_w)
+         for post in posts]
+# Tokenizador
+docs = [' '.join(post) for post in posts]
 
-# Módulo Scikit-learn (sklearn)
-# Método CountVectorizer
-from sklearn.feature_extraction.text import CountVectorizer
-
+# Transformacion matriz documento-termino
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import BernoulliNB
+import numpy as np
+# Metricas
+from sklearn.metrics import accuracy_score, classification_report
 # 1. Crear el objeto
-vectorizer = CountVectorizer(tokenizer=my_tokenizer)
-# vectorizer = CountVectorizer()
-# 2. Aprender el vocabulario
-# . fit(pubs) solo aprende el vocabulario
-# .fit_transform(pubs) aprende el vocabulario
-# y transforma pubs en una matriz
-# documento-termino
+vectorizer = TfidfVectorizer(tokenizer=my_tokenizer, norm='l2')
+
 dt_matrix = vectorizer.fit_transform(docs)
 # dt_matrix = vectorizer.fit_transform(df['publicacion'].tolist())
-
-
-# Recuperar vocabulario
 voc = list(vectorizer.get_feature_names_out())
 
-from sklearn.metrics.pairwise import pairwise_distances
-import numpy as np
-d_users = pairwise_distances(dt_matrix, metric='euclidean')
+#  Deividr el conjunto de datos
+from sklearn.model_selection import train_test_split
+docs_tr, docs_tst, lab_tr, lab_tst = train_test_split(dt_matrix, sexo,
+                                                      test_size=0.20,
+                                                      stratify=sexo,
+                                                      random_state=0)
 
-for i,user in enumerate(users[:4]):
-  # Conocer el punto mas cercano a i
-  # recuperar el renglon en las distancias
-  row_i = d_users[i].copy()
-  row_i[i] = np.inf
-  closet_user = np.argmin(row_i)
-  print(f'Para {user}, el mas cercano es {closet_user}')
-  print(f'\t\t{users[closet_user]}')
-  # Los k=3 mas cercanos
-  idx_closest_users = np.argsort(row_i)
-  closests_3 = [users[j] for j in idx_closest_users[:3]]
-  print(f"\t\tLos 3 mas cercanos: {closests_3}")
+# Entrenar el clasificador
+clf = BernoulliNB()
+clf.fit(docs_tr, lab_tr)
+
+# Evaluar clasificador
+predicted = clf.predict(docs_tst)
+
+# Media desempeño
+# Exactitud/Accuracy
+acc = accuracy_score(lab_tst, predicted)
+clf_perf = classification_report(lab_tst, predicted)
+print(f'Voc: {len(vectorizer.get_feature_names_out())}')
+
+# Corrigiendo la fuga de informacion
+# Primero dividir los documentos (no transformados)
+docs_tr, docs_tst, lab_tr, lab_tst = train_test_split(docs, sexo, test_size=0.20, stratify=sexo, random_state=0)
+
+# Transformacion de los documentos
+vectorizer = TfidfVectorizer(tokenizer=my_tokenizer, norm='l2')
+
+# Documentos entrenamiento
+dt_m_tr = vectorizer.fit_transform(docs_tr)
+
+# Docs de prueba
+dt_m_tst = vectorizer.transform(docs_tst)
+
+# Entrenar el clasificador
+clf = BernoulliNB()
+clf.fit(dt_m_tr, lab_tr)
+
+# Evaluar clasificador
+predicted = clf.predict(dt_m_tst)
+
+# Media desempeño
+# Exactitud/Accuracy
+acc = accuracy_score(lab_tst, predicted)
+clf_perf = classification_report(lab_tst, predicted)
+print(f'Voc: {len(vectorizer.get_feature_names_out())}')
