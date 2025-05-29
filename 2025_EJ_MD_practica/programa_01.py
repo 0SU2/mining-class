@@ -1,8 +1,52 @@
+"""
+@author: Oscar Ricardo Rosas Zavala
+Minería de Datos
+Lunes 14 de Abril del 2025
+"""
 import pandas as pd
 from pandas import DataFrame
 import matplotlib.pyplot as plt
 import os
-from scipy import stats
+import math
+
+def resumen_paises_wage(sr_f:DataFrame, l_l:list):
+  data = sr_f[sr_f['Country'].str.contains(f'{l_l[0]}|{l_l[1]}|{l_l[2]}|{l_l[-1:][0]}')].sort_values(by='ConvertedCompYearly',ascending=False)
+  l_country = data['Country'].to_list()
+  l_wage = data['ConvertedCompYearly'].to_list()
+  cat_wage = [ define_category_wage(value) for value in l_wage]
+  c_t = tab_cot(l_country, cat_wage)
+  for best03 in l_l[:3]:
+    p_c = prob_cond(c_t, 'Alto', f'{best03}')
+    print(f'\tProbabilidad de que sea de {best03} y tenga salario alto: {p_c:.2f}')
+  
+  p_c = prob_cond(c_t, 'Alto', f'{l_l[-1:][0]}')
+  print(f'\tProbabilidad de que sea de {l_l[-1:][0]} y tenga salario alto: {p_c:.2f}')
+  return c_t
+
+def coef_pearson(c_t:dict):
+  n = sum(sum(valores.values()) for valores in c_t.values())
+  
+  # Calculamos las frecuencias esperadas bajo la hipótesis de independencia
+  frecuencias_esperadas = {}
+  for pais, valores in c_t.items():
+      for categoria, frecuencia in valores.items():
+          frecuencia_pais = sum(c_t[pais].values())
+          frecuencia_categoria = sum(valores[categoria] for valores in c_t.values())
+          frecuencia_esperada = (frecuencia_pais * frecuencia_categoria) / n
+          frecuencias_esperadas[(pais, categoria)] = frecuencia_esperada
+
+  # Calculamos el estadístico chi-cuadrado
+  chi_cuadrado = 0
+  for pais, valores in c_t.items():
+    for categoria, frecuencia in valores.items():
+        frecuencia_esperada = frecuencias_esperadas[(pais, categoria)]
+        chi_cuadrado += ((frecuencia - frecuencia_esperada) ** 2) / frecuencia_esperada
+
+  # Calculamos el coeficiente de phi
+  phi = math.sqrt(chi_cuadrado / n)
+
+  print(f'\tEl coeficiente de phi entre el pais y el salario anual es: {phi:.2f}')
+  return
 
 def define_category_wage(value:int):
   if value <= 10000:
@@ -36,24 +80,40 @@ def create_plot(catg:list=None, freq:list=None, label_title:str=None, label_file
       return
     else:
       plt.figure(figsize=(10,7))
-      barra = plt.bar(catg, freq, color='blue', width=0.5)
-      plt.bar_label(barra, color='blue', label_type='edge')
+      barra = plt.barh(catg, freq, color='blue')
+      plt.bar_label(barra, color='black', label_type='edge')
       plt.title(f'{label_title}')
-      plt.tick_params('x', labelsize=8, rotation=70)
-      plt.savefig(f'./{label_file}.pdf', dpi=600)
-      return
+      plt.tight_layout()
+      # Crear directorio para tener un orden en las graficas para cada programa
+      try:
+        os.mkdir('graficos_programa_01')
+        plt.savefig(f'./graficos_programa_01/{label_file}.jpg', dpi=300)
+        return 
+      except:
+        plt.savefig(f'./graficos_programa_01/{label_file}.jpg', dpi=300)
+        return
   if type_of_plot == 'boxplot':
     plt.figure()
     plt.boxplot(values)
     plt.title(f'{label_title}')
-    plt.savefig(f'{label_file}.pdf')
-    return
+    try:
+      os.mkdir('graficos_programa_01')
+      plt.savefig(f'./graficos_programa_01/{label_file}.jpg', dpi=300)
+      return 
+    except:
+      plt.savefig(f'./graficos_programa_01/{label_file}.jpg', dpi=300)
+      return
   if type_of_plot == 'hist':
     plt.figure()
     plt.hist(values, bins=10)
     plt.title(f'{label_title}')
-    plt.savefig(f'./{label_file}.pdf', dpi=600)
-    return
+    try:
+      os.mkdir('graficos_programa_01')
+      plt.savefig(f'./graficos_programa_01/{label_file}.jpg', dpi=300)
+      return 
+    except:
+      plt.savefig(f'./graficos_programa_01/{label_file}.jpg', dpi=300)
+      return
 
 def var_std(lista, media):
   var = [(x_i - media)**2 for x_i in lista]
@@ -146,7 +206,6 @@ def resumen_salarios(country_label:str, list_Comp:DataFrame):
   data = list_Comp[list_Comp['Country'].str.contains(country_label)]
   values = data['ConvertedCompYearly'].to_list()
   values.sort(reverse=True)
-  # values.sort()
   # Calcular k, los cuartiles, la media y desviacion estandar
   trim_val = trimm_data(values)
   n = get_bins(values, 10)
@@ -168,7 +227,7 @@ def resumen_salarios(country_label:str, list_Comp:DataFrame):
   # Boxplot
   create_plot(label_title=f'Boxplot de {country_label}', label_file=f'frecuencias_boxplot_{country_label}', type_of_plot='boxplot', values=values)
   # Histograma
-  create_plot(values=values, label_title=f'Histograma de {country_label}', label_file=f'histograma_salario_{country_label}', type_of_plot='hist')
+  create_plot(label_title=f'Histograma de {country_label}', label_file=f'histograma_salario_{country_label}', type_of_plot='hist', values=values)
 
   # Categorizando los salarios en 3 tipos, alto, medio y bajo
   total_sal = len(values)
@@ -211,21 +270,10 @@ def resume_country(sr_f:DataFrame):
   print('------------')
 
   # Obteniendo todos los salarios anuales de los usuarios en los 3 mejores paises
-  data = sr_f[sr_f['Country'].str.contains(f'{l_l[0]}|{l_l[1]}|{l_l[2]}|{l_l[-1:][0]}')]
-  l_country = data['Country'].to_list()
-  l_wage = data['ConvertedCompYearly'].to_list()
-  cat_wage = [ define_category_wage(value) for value in l_wage]
-  c_t = tab_cot(l_country, cat_wage)
-  for best03 in l_l[:3]:
-    p_c = prob_cond(c_t, 'Alto', f'{best03}')
-    print(f'Probabilidad de que sea de {best03} y tenga salario alto: {p_c}')
-  
-  p_c = prob_cond(c_t, 'Alto', f'{l_l[-1:][0]}')
+  c_t = resumen_paises_wage(sr_f, l_l)
   print(c_t)
-  print(f'Probabilidad de que sea de {l_l[-1:][0]} y tenga salario alto: {p_c}')
-  l = [list(v.values()) for v in c_t.values()]
-  chi = stats.chi2_contingency(l)
-  print(l)
+  # Calculando el coef de pearson
+  coef_pearson(c_t)
 
   return
 

@@ -28,7 +28,7 @@ l_7 = ['par' if i%2 == 0 else 'impar' for i in range(n, n+1)]
 # generar una lista con numeros que sean par
 # y divisibles por 7
 
-l_8 = [ i for i in range(1, n+1) if i%2 == 0 else i%7 == 0]
+l_8 = [i for i in range(1, n+1) if i%2 == 0 else i%7 == 0]
 
 # La compresion es una forma elegante de crear
 # una lista.

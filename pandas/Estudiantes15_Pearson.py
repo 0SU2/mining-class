@@ -34,6 +34,8 @@ def coef_pearson(val_1,val_2):
 
   return r
 
+print(edad)
+print(semestre)
 print(len(edad))
 print(len(semestre))
 

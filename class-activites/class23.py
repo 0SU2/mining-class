@@ -23,7 +23,7 @@ def coef_pearson(val_1, val_2):
 
     r = num / ((den1**0.5) * (den2**0.5))
     return r
-w_d = '/home/ren01/Downloads/'
+w_d = '/home/osu2/programming/mining-class/info-estudiantes/'
 i_f = w_d + 'info_estudiantes.csv'
 df = pd.read_csv(i_f)
 
